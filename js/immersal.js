@@ -254,11 +254,7 @@ class Immersal extends EventTarget {
     this.continuousInterval = continuousInterval;
     this.imageDownScale = imageDownScale;
 
-    if (typeof THREE !== "undefined") {
-      this.#axisRot.rotateX(Math.PI);
-    } else if (typeof BABYLON !== "undefined") {
-      this.#axisRot.rotateZ(Math.PI);
-    }
+    this.#axisRot.rotateX(Math.PI);
   
     this.#initVideo();
   }
@@ -418,11 +414,6 @@ class Immersal extends EventTarget {
     const q3 = new Quaternion().setFromEuler(euler);
     q3.multiply(q1);
     q3.multiply(q0);
-
-    if (typeof BABYLON !== "undefined") {
-      q3.y = -q3.y;
-      q3.w = -q3.w;
-    }
 
     this.gyroData.set(q3.x, q3.y, q3.z, q3.w);
   }
