@@ -3,7 +3,15 @@ Immersal VPS for Web (aka WebAR)
 
 This is a sample of how to use Immersal's Visual Positioning System (VPS) for on-device localization natively on a (mobile) Web browser. It can be used e.g. for persistent and anchored WebAR experiences, and to retrieve the user's position in global coordinates (latitude, longitude, altitude) from the camera image.
 
-## What's new (Feb 07, 2025)
+## What's new
+
+### Oct 02, 2026
+
+- Updated Wasm plugins for the new map file format introduced in Cloud Service 1.27.0
+- Improved tracking stability / pose filtering
+- Minor tidy up
+
+### Feb 07, 2025
 
 - Added Babylon.js sample
 - Improved UI for localization testing (split into on-device / on-server modes)
