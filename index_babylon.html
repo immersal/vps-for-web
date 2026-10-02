@@ -21,9 +21,9 @@
 </div>
 <div id="uicontainer">
   <div class="form-group">
-    <input type="radio" id="mode1" name="mode" value="ondevice" checked onclick="hide('serverlocui', this); show('devicelocui', this)"/>
+    <input type="radio" id="mode1" name="mode" value="ondevice" checked onclick="setMode('ondevice')"/>
     <label for="mode1">On-device</label>
-    <input type="radio" id="mode2" name="mode" value="onserver" onclick="hide('devicelocui', this); show('serverlocui', this)"/>
+    <input type="radio" id="mode2" name="mode" value="onserver" onclick="setMode('onserver')"/>
     <label for="mode2">On-server</label>
   </div>
   <div id="devicelocui" class="form-group">
@@ -40,8 +40,6 @@
 <script type="module">
   import { immersalParams } from './js/imConfig.js';
   import { Immersal, createOrientationSensor } from './js/immersal.js';
-
-  const USE_FILTERING = true;
 
   const container = document.getElementById("container");
   const canvas = document.getElementById("renderCanvas");
@@ -67,7 +65,6 @@
   let mapHandle = -1;
   let pointCloud = null;
   let contentLoaded = false;
-  let prevTime = 0;
 
   const createScene = async () => {
     scene = new BABYLON.Scene(engine);
@@ -75,6 +72,7 @@
     scene.useRightHandedSystem = true;
 
     camera = new BABYLON.UniversalCamera("RenderCamera", BABYLON.Vector3.Zero(), scene);
+    camera.rotationQuaternion = BABYLON.Quaternion.Identity();
     camera.fovMode = BABYLON.Camera.FOVMODE_VERTICAL_FIXED;
     scene.activeCamera = camera;
     camera.attachControl(engine.getRenderingCanvas(), true);
@@ -155,8 +153,6 @@
 
   const render = () => {
     const timestamp = performance.now();
-    const dt = timestamp - prevTime;
-    prevTime = timestamp;
 
     if (mapHandle >= 0 && immersal.continuousLocalization) {
       immersal.localizeDevice(timestamp);
@@ -174,41 +170,30 @@
         camera.fov = BABYLON.Tools.ToRadians(fovV);
       }
 
-      const {position, rotation, elapsedTime, wgs84} = immersal.localizeInfo;
-
       if (immersal.continuousLocalization) {
         const {position, rotation} = immersal.getEstimatedPose(timestamp);
 
         POS.set(position[0], position[1], position[2]);
         Q.set(rotation[0], rotation[1], rotation[2], rotation[3]);
-        QG.set(immersal.gyroData.x, immersal.gyroData.y, immersal.gyroData.z, immersal.gyroData.w);
-        Q.multiplyToRef(QG, ROT);
-
-        if (USE_FILTERING) {
-          let step = 0.025 * dt;
-          if (step > 1.0)
-            step = 1.0;
-
-          BABYLON.Vector3.LerpToRef(camera.position, POS, step, camera.position);
-          camera.rotationQuaternion = ROT;
-        } else {
-          camera.position.set(POS.x, POS.y, POS.z);
-          camera.rotationQuaternion = ROT;
-        }
       } else {
+        const {position, rotation} = immersal.localizeInfo;
+
         POS.set(position.x, position.y, position.z);
         Q.set(rotation.x, rotation.y, rotation.z, rotation.w);
-        QG.set(immersal.gyroData.x, immersal.gyroData.y, immersal.gyroData.z, immersal.gyroData.w);
-        Q.multiplyToRef(QG, ROT);
-        camera.position.set(POS.x, POS.y, POS.z);
-        camera.rotationQuaternion = ROT;
       }
+
+      QG.set(immersal.gyroData.x, immersal.gyroData.y, immersal.gyroData.z, immersal.gyroData.w);
+      Q.multiplyToRef(QG, ROT);
+
+      camera.position.copyFrom(POS);
+      camera.rotationQuaternion.copyFrom(ROT);
+
+      const {elapsedTime, wgs84} = immersal.localizeInfo;
+      //console.log(`elapsedTime: ${elapsedTime * 0.001}, latitude: ${wgs84.latitude}, longitude: ${wgs84.longitude}, altitude: ${wgs84.altitude}`);
 
       lat.innerHTML = wgs84.latitude.toFixed(5);
       lon.innerHTML = wgs84.longitude.toFixed(5);
       alt.innerHTML = wgs84.altitude.toFixed(5);
-
-      //console.log(`latitude: ${wgs84.latitude}, longitude: ${wgs84.longitude}, altitude: ${wgs84.altitude}`);
     }
   }
 
@@ -272,12 +257,12 @@
 
   // UI functions
 
-  function show(el, box) {
-    document.getElementById(el).style.display = (box.checked) ? "block" : "none";
-  }
+  function setMode(mode) {
+    document.getElementById("devicelocui").style.display =
+      mode === "ondevice" ? "block" : "none";
 
-  function hide(el, box) {
-    document.getElementById(el).style.display = (box.checked) ? "none" : "none";
+    document.getElementById("serverlocui").style.display =
+      mode === "onserver" ? "block" : "none";
   }
 
   function toggleLoc(box) {
@@ -285,8 +270,7 @@
     locButton.style.display = (box.checked) ? "none" : "block";
   }
 
-  window.show = show;
-  window.hide = hide;
+  window.setMode = setMode;
   window.toggleLoc = toggleLoc;
 </script>
 </body>

@@ -664,7 +664,10 @@ class Immersal extends EventTarget {
 
     this.cameraData.buffer = this.camera?.getImageData(this.imageDownScale);
 
-    if (!this.cameraData.buffer) return;
+    if (!this.cameraData.buffer) {
+      this.localization.localizing = false;
+      return;
+    }
 
     const intr = Object.values(this.cameraData.intrinsics);
 
